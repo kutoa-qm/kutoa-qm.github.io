@@ -8,6 +8,16 @@
         body { font-family: sans-serif; margin: 40px; background: #f5f5f5; color: #333; }
         .screen { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
         .instruction { background: #eef7ff; padding: 20px; border-radius: 6px; line-height: 1.6; margin-bottom: 20px; }
+        .audio-warning {
+            color: #c0392b; /* 注意を促す濃い赤色 */
+            background: #fadbd8; /* 薄い赤色の背景でボックス全体を目立たせる */
+            padding: 10px 12px;
+            border-left: 4px solid #e74c3c; /* 左側に赤いアクセント線 */
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
         .btn { display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; text-align: center; margin-top: 20px; }
         .btn:hover { background: #0056b3; }
         .btn-stop { background: #dc3545; }
@@ -38,9 +48,11 @@
 
     <!-- 1. 設定・教示画面 -->
     <div id="setup-screen" class="screen">
-        <h2>時間知覚実験</h2>
+        <h2>リズム提示と時間知覚に関する実験</h2>
         <div class="instruction">
-            <p>これは、リズムの提示が「時間の捉え方」に与える効果を検証する実験です。<br>
+            <p class="audio-warning">⚠️ 【重要】この実験では音を使用します。音声が聞こえても問題のない環境（イヤホンの着用など）で、端末の音量を適度にあげて実施してください。</p>
+
+            <p>この実験では、リズムの提示が「時間の捉え方」に与える効果を検証します。<br>
             提示されるテンポに合わせて頭の中でカウントし、<strong>ちょうど10カウント（10拍目）</strong>になったと思う瞬間にタイマーを止めるテストを行います。</p>
 
             <p>本番（合計12回）の前に、まずは操作に慣れるための<strong>練習（合計2回）</strong>を行います。<br>
@@ -94,7 +106,7 @@
     <!-- 4. 結果出力画面 -->
     <div id="result-screen" class="screen" style="display:none;">
         <h2>実験結果</h2>
-        <p>実験はすべて終了しました。以下のテキストボックス内のデータをコピーして保存してください。</p>
+        <p>これで実験はすべて終了です。ご参加ありがとうございました。<br>以下のテキストボックス内のデータをコピーして指定のフォームに入力してください。</p>
         <button id="copy-btn" class="btn" onclick="copyResultText()" style="background: #28a745; margin-bottom: 15px;">結果をクリップボードにコピー</button>
         <textarea id="result-data" readonly></textarea>
     </div>
