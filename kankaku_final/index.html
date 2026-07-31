@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>時間知覚実験システム</title>
     <style>
         body { font-family: sans-serif; margin: 40px; background: #f5f5f5; color: #333; }
@@ -17,6 +18,20 @@
         #result-data { width: 100%; height: 300px; font-family: monospace; margin-top: 15px; }
         .practice-badge { display: inline-block; background: #dc3545; color: white; padding: 4px 8px; font-weight: bold; border-radius: 4px; margin-bottom: 10px; }
         .center-wrapper { text-align: center; }
+
+        /* 💡 スマホ表示（画面幅768px以下）のときだけ発動するスタイル */
+        @media (max-width: 768px) {
+            body {
+                margin: 20px 10px; /* 全体の上下余白を減らし、左右のデッドスペースを10pxまで削ります */
+            }
+            .screen {
+                padding: 20px 12px; /* 白い枠線内の左右余白を30pxから12pxに狭めてテキスト幅を広げます */
+                box-sizing: border-box; /* 横幅の計算がスマホ画面からはみ出さないようにガードします */
+            }
+            .instruction {
+                padding: 15px 10px; /* 青い説明文ボックスの内側余白も少し削って文字領域を確保します */
+            }
+        }
     </style>
 </head>
 <body>
@@ -29,7 +44,8 @@
             提示されるテンポに合わせて頭の中でカウントし、<strong>ちょうど10カウント（10拍目）</strong>になったと思う瞬間にタイマーを止めるテストを行います。</p>
 
             <p>本番（合計12回）の前に、まずは操作に慣れるための<strong>練習（合計2回）</strong>を行います。<br>
-            以下の手順とルールをよく読んでから実験を開始してください。</p>
+                ※練習時のみ、結果を簡易的に表示します。<br>
+            以下の手順とルールをよく読んでから実験を開始してください。</p><br>
 
             <strong>【実験の手順】</strong>
             <ol>
@@ -40,7 +56,7 @@
                 <li>「3」のカウントが終わると（4拍分が経過すると）、<strong>数字もリズム音も同時に消えて「？？？」になります。</strong></li>
                 <li>提示されたテンポを頭の中でそのまま維持し、<strong>ちょうど「10」に達したと思う瞬間</strong>に「ストップ」を押してください。</li>
                 <li>12回のテストが終了すると結果画面に移るので、指示に従って結果をフォームに入力してください。</li>
-            </ol>
+            </ol><br>
 
             <strong>【実験中のルール】</strong>
             <ul>
@@ -63,7 +79,7 @@
         <div id="display">0</div>
         
         <button id="start-btn" class="btn" onclick="triggerStart()">スタート</button>
-        <button id="stop-btn" class="btn btn-stop" onclick="triggerStop()" style="display:none;">ストップ</button>
+        <button id="stop-btn" class="btn btn-stop" onclick="triggerStop()" style="display:none;">10カウントでストップ</button>
     </div>
 
     <!-- 3. 練習終了時のインターバル画面 -->
@@ -71,7 +87,7 @@
         <h2>練習終了</h2>
         <p>これで2回の練習試行はすべて終了です。手順やタイミングの感覚は掴めましたでしょうか？</p>
         <p>次から<strong>本番（合計12回）</strong>が始まります。本番の測定データは実験結果として記録されます。</p>
-        <p>心の準備ができたら、以下のボタンを押して本番を開始してください。</p>
+        <p>準備ができたら、以下のボタンを押して本番を開始してください。</p>
         <button class="btn" onclick="startActualExperiment()">本番を開始する</button>
     </div>
 
@@ -79,6 +95,7 @@
     <div id="result-screen" class="screen" style="display:none;">
         <h2>実験結果</h2>
         <p>実験はすべて終了しました。以下のテキストボックス内のデータをコピーして保存してください。</p>
+        <button id="copy-btn" class="btn" onclick="copyResultText()" style="background: #28a745; margin-bottom: 15px;">結果をクリップボードにコピー</button>
         <textarea id="result-data" readonly></textarea>
     </div>
 
@@ -199,13 +216,13 @@
 
     // 1. 実験全体の初期化（最初のボタンクリック）
     function initializeExperiment() {
-        // 音声のブラウザミュート解除対策
+        // 音声のブラウザミュート解除対策（Safariでの一瞬の音漏れを防ぐ修正）
         Object.values(audioFiles).forEach(audio => {
-            audio.volume = 0;
+            audio.muted = true; // volume=0 ではなく完全にミュート状態にする
             audio.play().then(() => {
                 audio.pause();
                 audio.currentTime = 0;
-                audio.volume = 1;
+                audio.muted = false; // 許可が取れたのでミュートを解除しておく
             }).catch(e => console.log("Audio init hint"));
         });
 
@@ -239,8 +256,7 @@
         
         // 練習か本番かでラベル表示を切り替える
         if (isPracticeMode) {
-            document.getElementById('practice-label').style.style = 'inline-block'; // 表示
-            document.getElementById('practice-label').style.display = 'inline-block'; 
+            document.getElementById('practice-label').style.display = 'inline-block'; // 表示 
             document.getElementById('progress-display').innerText = `練習試行 ${currentTrialIndex + 1} / 2`;
         } else {
             document.getElementById('practice-label').style.display = 'none'; // 非表示
@@ -280,24 +296,29 @@
         timerInterval = setInterval(updateDisplay, 4);
     }
 
-    // 5. タイマー稼働中の処理（音声同期型）
+    // 5. タイマー稼働中の処理（3カウント目が表示・再生されるように修正）
     function updateDisplay() {
         const trial = schedule[currentTrialIndex];
         
         if (trial.condition === 'audio' && currentAudio) {
+            // 【音あり条件】音声ファイルの「実際の再生秒数」をベースにカウントを計算
             const audioElapsed = currentAudio.currentTime; 
             const currentCount = Math.floor(audioElapsed / trial.tempo);
             
+            // 【修正】4カウント未満（0, 1, 2, 3 の期間）は数字を表示し音を流す
             if (audioElapsed < (trial.tempo * 4)) {
                 document.getElementById('display').innerText = currentCount;
             } else {
+                // 4カウントに到達した瞬間（3カウントの時間が満了した時）に消す
                 document.getElementById('display').innerText = "？？？";
                 currentAudio.pause();
             }
         } else {
+            // 【数字のみ条件】PCの経過時間をベースに計算
             const elapsed = (performance.now() - startTime) / 1000;
             const currentCount = Math.floor(elapsed / trial.tempo);
             
+            // 【修正】4カウント未満（0, 1, 2, 3 の期間）は数字を表示
             if (elapsed < (trial.tempo * 4)) {
                 document.getElementById('display').innerText = currentCount;
             } else {
@@ -318,6 +339,17 @@
         const trial = schedule[currentTrialIndex];
         const targetTime = trial.tempo * 10;
         const error = finalElapsed - targetTime;
+
+        // 【追加】練習モードのときだけ簡易フィードバックを表示
+        if (isPracticeMode) {
+            alert(
+                `【練習試行フィードバック】\n` +
+                ` ※これは練習時のみ表示されます\n\n` +
+                `目標秒数: ${targetTime.toFixed(3)} 秒\n` +
+                `測定秒数: ${finalElapsed.toFixed(3)} 秒\n` +
+                `誤差: ${error >= 0 ? '+' : ''}${error.toFixed(3)} 秒`
+            );
+        }
 
         // 【修正ポイント】本番モードのデータのみログに記録する
         if (!isPracticeMode) {
@@ -377,7 +409,54 @@
             text += `テンポ ${t}s [数字＋音]: 平均誤差 ${aAvg.toFixed(3)}秒 (データ数: ${aErrors.length})\n`;
         });
         
-        document.getElementById('result-data').innerText = text;
+        document.getElementById('result-data').value = text;
+    }
+
+    // 結果テキストをクリップボードにコピーする関数（iOS/Safari 確実対応版）
+    function copyResultText() {
+        const resultData = document.getElementById('result-data');
+        const copyBtn = document.getElementById('copy-btn');
+        
+        // 1. 一時的なダミーの textarea を作成して画面外に配置
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = resultData.value;
+        
+        // iOSでキーボードが立ち上がったり画面がスクロールしたりするのを防ぐスタイル設定
+        tempTextArea.style.position = 'fixed';
+        tempTextArea.style.top = '-9999px';
+        tempTextArea.style.left = '-9999px';
+        tempTextArea.setAttribute('readonly', '');
+        
+        document.body.appendChild(tempTextArea);
+        
+        // 2. 厳格なiOS向け選択処理
+        tempTextArea.select();
+        tempTextArea.setSelectionRange(0, 99999);
+        
+        // 3. コピーの実行
+        let success = false;
+        try {
+            success = document.execCommand('copy');
+        } catch (err) {
+            success = false;
+        }
+        
+        // 4. ダミー要素の削除
+        document.body.removeChild(tempTextArea);
+        
+        // 5. 結果に応じたフィードバック
+        if (success) {
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = "✓ コピーしました！";
+            copyBtn.style.background = "#1e7e34";
+            
+            setTimeout(() => {
+                copyBtn.innerText = originalText;
+                copyBtn.style.background = "#28a745";
+            }, 2000);
+        } else {
+            alert("コピーに失敗しました。お手数ですがテキストボックス内を手動で長押ししてコピーしてください。");
+        }
     }
 </script>
 </body>
