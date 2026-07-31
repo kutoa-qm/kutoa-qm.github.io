@@ -22,12 +22,26 @@
         .btn:hover { background: #0056b3; }
         .btn-stop { background: #dc3545; }
         .btn-stop:hover { background: #bd2130; }
-        #display { font-size: 80px; font-weight: bold; text-align: center; margin: 40px 0; font-family: monospace; }
+        #display { font-size: 80px; font-weight: bold; text-align: center; margin: 40px 0; font-family: monospace; 
+                   height: 96px; line-height: 96px; overflow: hidden; box-sizing: border-box;
+        }
         #cond-title { font-size: 20px; font-weight: bold; text-align: center; white-space: pre-wrap; margin-bottom: 10px; }
         #progress-display { font-size: 16px; color: #666; text-align: center; margin-bottom: 20px; }
         #result-data { width: 100%; height: 300px; font-family: monospace; margin-top: 15px; }
         .practice-badge { display: inline-block; background: #dc3545; color: white; padding: 4px 8px; font-weight: bold; border-radius: 4px; margin-bottom: 10px; }
         .center-wrapper { text-align: center; }
+        #display-hint {
+            font-size: 18px;
+            font-weight: normal;
+            color: #323232;
+            text-align: center; /* 中央に表示 */
+            margin-top: -50px;  /* #display の下の余白が広い場合はマイナスで少し上に引き締めます */
+            margin-bottom: 0px;
+            font-family: sans-serif;
+            min-height: 100px;   /* 文字が消えている間も高さだけ確保してガタつきを防ぐ */
+            line-height: 50px;  /* 高さを統一 */
+            box-sizing: border-box;
+        }
 
         /* 💡 スマホ表示（画面幅768px以下）のときだけ発動するスタイル */
         @media (max-width: 768px) {
@@ -55,7 +69,7 @@
             <p>この実験では、リズムの提示が「時間の捉え方」に与える効果を検証します。<br>
             提示されるテンポに合わせて頭の中でカウントし、<strong>ちょうど10カウント（10拍目）</strong>になったと思う瞬間にタイマーを止めるテストを行います。</p>
 
-            <p>本番（合計12回）の前に、まずは操作に慣れるための<strong>練習（合計2回）</strong>を行います。<br>
+            <p><strong>本番（合計12回）</strong>の前に、まずは操作に慣れるための<strong>練習（合計2回）</strong>を行います。<br>
                 ※練習時のみ、結果を簡易的に表示します。<br>
             以下の手順とルールをよく読んでから実験を開始してください。</p><br>
 
@@ -72,9 +86,9 @@
 
             <strong>【実験中のルール】</strong>
             <ul>
-                <li><strong>数字のみ条件のとき：</strong> 画面から数字が消えた後も、頭の中でそのテンポのまま数字を数え続けてください。</li>
-                <li><strong>音あり条件のとき：</strong> 音が消えた後も、頭の中でそのリズムをキープしながら数字を数え続けてください。</li>
-                <li>※ 体を動かしてリズムを取ったり（手足で拍子を取るなど）、時計を見たりせず、純粋に頭の中の感覚だけでカウントしてください。</li>
+                <li><strong>数字のみ条件のとき：</strong> 画面から数字が消えた後も、<u>最初に提示されたテンポ</u>を頭の中で維持してください。</li>
+                <li><strong>音あり条件のとき：</strong> 音が消えた後も、最初に<u>聞いたリズム感</u>を頭の中で維持してください。</li>
+                <li>※ 体を動かしてリズムを取ったり（手足で拍子を取るなど）、時計を見たりせず、<u>純粋に頭の中の感覚だけ</u>でカウントしてください。</li>
             </ul>
         </div>
         <button class="btn" onclick="initializeExperiment()">実験を開始する</button>
@@ -89,6 +103,7 @@
         <div id="cond-title">条件A：数字のみ</div>
         
         <div id="display">0</div>
+        <div id="display-hint" class="keep-hint"></div>
         
         <button id="start-btn" class="btn" onclick="triggerStart()">スタート</button>
         <button id="stop-btn" class="btn btn-stop" onclick="triggerStop()" style="display:none;">10カウントでストップ</button>
@@ -208,21 +223,17 @@
         return finalSchedule;
     }
 
-    // 練習用の簡易ランダムスケジュールを作る関数（2回分：音なし1、音あり1）
+    // 練習用のスケジュールを作る関数（2回とも真ん中のテンポ 1.2s に固定）
     function generatePracticeSchedule() {
         const firstCond = Math.random() < 0.5 ? 'visual' : 'audio';
         const secondCond = firstCond === 'visual' ? 'audio' : 'visual';
-        const randTempo1 = TEMPO_PATTERNS[Math.floor(Math.random() * TEMPO_PATTERNS.length)];
-        let randTempo2 = TEMPO_PATTERNS[Math.floor(Math.random() * TEMPO_PATTERNS.length)];
         
-        // 練習でも連続で同じテンポにならないように配慮
-        while(randTempo1 === randTempo2) {
-            randTempo2 = TEMPO_PATTERNS[Math.floor(Math.random() * TEMPO_PATTERNS.length)];
-        }
+        // 1カウントの長さを中間の「1.2」秒に固定
+        const middleTempo = 1.2; 
 
         return [
-            { condition: firstCond, tempo: randTempo1 },
-            { condition: secondCond, tempo: randTempo2 }
+            { condition: firstCond, tempo: middleTempo },
+            { condition: secondCond, tempo: middleTempo }
         ];
     }
 
@@ -264,6 +275,8 @@
 
     // 3. 各試行の画面・音声準備
     function setupTrial() {
+        document.getElementById('display-hint').innerText = " ";
+        document.getElementById('display-hint').innerText = "";
         const trial = schedule[currentTrialIndex];
         
         // 練習か本番かでラベル表示を切り替える
@@ -289,8 +302,8 @@
             currentAudio.currentTime = 0;
         }
         
-        const condText = trial.condition === 'visual' ? "条件A：数字のみ 🕶️" : "条件B：数字 ＋ リズム音 🎧";
-        document.getElementById('cond-title').innerText = `${condText}\n(目標: 10カウント / ${(trial.tempo * 10).toFixed(1)}秒)`;
+        const condText = trial.condition === 'visual' ? "条件A：数字のみ" : "条件B：数字 ＋ リズム音";
+        document.getElementById('cond-title').innerText = condText;
     }
 
     // 4. 計測スタート
@@ -323,6 +336,7 @@
             } else {
                 // 4カウントに到達した瞬間（3カウントの時間が満了した時）に消す
                 document.getElementById('display').innerText = "？？？";
+                document.getElementById('display-hint').innerText = "リズムをキープ！";
                 currentAudio.pause();
             }
         } else {
@@ -335,6 +349,7 @@
                 document.getElementById('display').innerText = currentCount;
             } else {
                 document.getElementById('display').innerText = "？？？";
+                document.getElementById('display-hint').innerText = "テンポをキープ！";
             }
         }
     }
