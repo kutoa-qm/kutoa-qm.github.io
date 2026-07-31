@@ -43,6 +43,14 @@
             box-sizing: border-box;
         }
 
+        /* 📊 被験者向けのきれいな結果表示スタイル */
+        .analysis-section { margin-top: 30px; background: #fff; padding: 20px; border-radius: 6px; border: 1px solid #e0e0e0; }
+        .analysis-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px; text-align: center; }
+        .analysis-section h3 { font-size: 15px; margin-top: 20px; margin-bottom: 8px; color: #333; }
+        .result-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
+        .result-table th, .result-table td { border: 1px solid #ddd; padding: 10px 8px; text-align: center; }
+        .result-table th { background: #f8f9fa; font-weight: bold; }
+
         /* 💡 スマホ表示（画面幅768px以下）のときだけ発動するスタイル */
         @media (max-width: 768px) {
             body {
@@ -67,20 +75,22 @@
             <p class="audio-warning">⚠️ 【重要】この実験では音を使用します。音声が聞こえても問題のない環境（イヤホンの着用など）で、端末の音量を適度にあげて実施してください。</p>
 
             <p>この実験では、リズムの提示が「時間の捉え方」に与える効果を検証します。<br>
-            提示されるテンポに合わせて頭の中でカウントし、<strong>ちょうど10カウント（10拍目）</strong>になったと思う瞬間にタイマーを止めるテストを行います。</p>
+            提示されるテンポに合わせて頭の中でカウントし、<strong>ちょうど12カウント（12拍目）</strong>になったと思う瞬間にタイマーを止めるテストを行います。</p>
 
             <p><strong>本番（合計12回）</strong>の前に、まずは操作に慣れるための<strong>練習（合計2回）</strong>を行います。<br>
-                ※練習時のみ、結果を簡易的に表示します。<br>
-            以下の手順とルールをよく読んでから実験を開始してください。</p><br>
+                ※練習時のみ、結果を簡易的に表示します。<br></p>
+            
+            <p>以下の手順とルールをよく読んでから実験を開始してください。<br>
+                所要時間は<strong>5~10分</strong>です。</p><br>
 
             <strong>【実験の手順】</strong>
             <ol>
                 <li>「実験を開始する」ボタンを押すと始まります。</li>
-                <li>各試行で「スタート」を押すとカウントが始まります。</li>
-                <li>最初の4拍分<strong>（0, 1, 2, 3）</strong>の間だけ、画面に数字が表示されます。</li>
+                <li>各試行で「スタート」を押すと「1」からカウントが始まります。</li>
+                <li>最初の4拍分<strong>（1, 2, 3, 4）</strong>の間だけ、画面に数字が表示されます。</li>
                 <li><strong>【音あり条件】</strong>のときは、数字の表示と同時にリズム音（クリック音）が鳴ります。</li>
-                <li>「3」のカウントが終わると（4拍分が経過すると）、<strong>数字もリズム音も同時に消えて「？？？」になります。</strong></li>
-                <li>提示されたテンポを頭の中でそのまま維持し、<strong>ちょうど「10」に達したと思う瞬間</strong>に「ストップ」を押してください。</li>
+                <li>「4」のカウントが終わると（4拍分が経過すると）、<strong>数字もリズム音も同時に消えて「？？？」になります。</strong></li>
+                <li>提示されたテンポを頭の中でそのまま維持し、<strong>ちょうど「12」に達したと思う瞬間</strong>に「ストップ」を押してください。</li>
                 <li>12回のテストが終了すると結果画面に移るので、指示に従って結果をフォームに入力してください。</li>
             </ol><br>
 
@@ -102,11 +112,11 @@
         <div id="progress-display">試行 1 / 12</div>
         <div id="cond-title">条件A：数字のみ</div>
         
-        <div id="display">0</div>
+        <div id="display">1</div>
         <div id="display-hint" class="keep-hint"></div>
         
         <button id="start-btn" class="btn" onclick="triggerStart()">スタート</button>
-        <button id="stop-btn" class="btn btn-stop" onclick="triggerStop()" style="display:none;">10カウントでストップ</button>
+        <button id="stop-btn" class="btn btn-stop" onclick="triggerStop()" style="display:none;">12カウントでストップ</button>
     </div>
 
     <!-- 3. 練習終了時のインターバル画面 -->
@@ -124,6 +134,39 @@
         <p>これで実験はすべて終了です。ご参加ありがとうございました。<br>以下のテキストボックス内のデータをコピーして指定のフォームに入力してください。</p>
         <button id="copy-btn" class="btn" onclick="copyResultText()" style="background: #28a745; margin-bottom: 15px;">結果をクリップボードにコピー</button>
         <textarea id="result-data" readonly></textarea>
+        <!-- 被験者に結果をきれいに出力するエリア -->
+        <div class="analysis-section">
+            <div class="analysis-title">📊 実験結果の要約（平均絶対誤差）</div>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px; text-align: center;">※値が0秒に近いほど、目標の時間通りに正確にストップできたことを示します。</p>
+            
+            <h3>【条件全体の平均絶対誤差】</h3>
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>実験条件</th>
+                        <th>平均絶対誤差</th>
+                        <th>試行回数</th>
+                    </tr>
+                </thead>
+                <tbody id="overall-analysis-tbody">
+                    <!-- JSで動的生成 -->
+                </tbody>
+            </table>
+
+            <h3>【テンポ別 × 条件別の詳細】</h3>
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>テンポ（1拍の長さ）</th>
+                        <th>数字のみ</th>
+                        <th>数字 ＋ リズム音</th>
+                    </tr>
+                </thead>
+                <tbody id="detailed-analysis-tbody">
+                    <!-- JSで動的生成 -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
 <script>
@@ -290,7 +333,7 @@
         
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('stop-btn').style.display = 'none';
-        document.getElementById('display').innerText = "0";
+        document.getElementById('display').innerText = "1";
         
         if (currentAudio) {
             currentAudio.pause();
@@ -328,9 +371,9 @@
         if (trial.condition === 'audio' && currentAudio) {
             // 【音あり条件】音声ファイルの「実際の再生秒数」をベースにカウントを計算
             const audioElapsed = currentAudio.currentTime; 
-            const currentCount = Math.floor(audioElapsed / trial.tempo);
+            const currentCount = Math.floor(audioElapsed / trial.tempo) + 1; // 1からスタート
             
-            // 【修正】4カウント未満（0, 1, 2, 3 の期間）は数字を表示し音を流す
+            // 【修正】4カウント未満（1, 2, 3, 4 の期間）は数字を表示し音を流す
             if (audioElapsed < (trial.tempo * 4)) {
                 document.getElementById('display').innerText = currentCount;
             } else {
@@ -342,9 +385,9 @@
         } else {
             // 【数字のみ条件】PCの経過時間をベースに計算
             const elapsed = (performance.now() - startTime) / 1000;
-            const currentCount = Math.floor(elapsed / trial.tempo);
+            const currentCount = Math.floor(elapsed / trial.tempo) + 1;
             
-            // 【修正】4カウント未満（0, 1, 2, 3 の期間）は数字を表示
+            // 【修正】4カウント未満（1, 2, 3, 4 の期間）は数字を表示
             if (elapsed < (trial.tempo * 4)) {
                 document.getElementById('display').innerText = currentCount;
             } else {
@@ -364,7 +407,7 @@
         const stopTime = performance.now();
         const finalElapsed = (stopTime - startTime) / 1000;
         const trial = schedule[currentTrialIndex];
-        const targetTime = trial.tempo * 10;
+        const targetTime = trial.tempo * 11;
         const error = finalElapsed - targetTime;
 
         // 【追加】練習モードのときだけ簡易フィードバックを表示
@@ -411,32 +454,59 @@
         }
     }
 
-    // 7. 結果出力
+    // 7. 結果出力（生データ抽出とHTMLによるきれいな表表示への振り分け）
     function showFinalResults() {
         document.getElementById('experiment-screen').style.display = 'none';
         document.getElementById('result-screen').style.display = 'block';
         
-        let text = "【実験結果詳細データ】\n";
-        text += "試行,条件,1カウント(秒),目標秒数,測定秒数,誤差(秒)\n";
+        // ① テキストボックスにはCSV形式の「生データ」のみを出力
+        let csvText = "試行,条件,1カウント(秒),目標秒数,測定秒数,誤差(秒)\n";
         resultsLog.forEach(log => {
-            text += `${log.trial},${log.condition},${log.tempo},${log.target},${log.actual},${log.error}\n`;
+            csvText += `${log.trial},${log.condition},${log.tempo},${log.target},${log.actual},${log.error}\n`;
         });
+        document.getElementById('result-data').value = csvText;
         
-        text += "\n-----------------------------------------\n";
-        text += "【条件別・テンポ別の平均誤差（秒）】\n";
+        // ② 平均絶対誤差を計算し、テキストボックス外のテーブルにきれいに出力する処理
         
+        // --- 1. 条件全体の平均絶対誤差の計算 ---
+        const allVErrors = resultsLog.filter(l => l.condition === '数字のみ').map(l => Math.abs(parseFloat(l.error)));
+        const allAErrors = resultsLog.filter(l => l.condition === '数字＋音').map(l => Math.abs(parseFloat(l.error)));
+
+        const allVAvg = allVErrors.length > 0 ? allVErrors.reduce((sum, e) => sum + e, 0) / allVErrors.length : 0;
+        const allAAvg = allAErrors.length > 0 ? allAErrors.reduce((sum, e) => sum + e, 0) / allAErrors.length : 0;
+
+        let overallHtml = `
+            <tr>
+                <td><strong>数字のみ</strong></td>
+                <td><span style="color:#007bff; font-weight:bold;">${allVAvg.toFixed(3)}</span> 秒</td>
+                <td>${allVErrors.length} 回</td>
+            </tr>
+            <tr>
+                <td><strong>数字 ＋ リズム音</strong></td>
+                <td><span style="color:#007bff; font-weight:bold;">${allAAvg.toFixed(3)}</span> 秒</td>
+                <td>${allAErrors.length} 回</td>
+            </tr>
+        `;
+        document.getElementById('overall-analysis-tbody').innerHTML = overallHtml;
+
+        // --- 2. テンポ別 × 条件別の平均絶対誤差の計算 ---
+        let detailedHtml = "";
         TEMPO_PATTERNS.forEach(t => {
-            const vErrors = resultsLog.filter(l => l.condition === '数字のみ' && l.tempo === t).map(l => parseFloat(l.error));
-            const aErrors = resultsLog.filter(l => l.condition === '数字＋音' && l.tempo === t).map(l => parseFloat(l.error));
+            const vErrors = resultsLog.filter(l => l.condition === '数字のみ' && l.tempo === t).map(l => Math.abs(parseFloat(l.error)));
+            const aErrors = resultsLog.filter(l => l.condition === '数字＋音' && l.tempo === t).map(l => Math.abs(parseFloat(l.error)));
             
             const vAvg = vErrors.length > 0 ? vErrors.reduce((sum, e) => sum + e, 0) / vErrors.length : 0;
             const aAvg = aErrors.length > 0 ? aErrors.reduce((sum, e) => sum + e, 0) / aErrors.length : 0;
             
-            text += `テンポ ${t}s [数字のみ]: 平均誤差 ${vAvg.toFixed(3)}秒 (データ数: ${vErrors.length})\n`;
-            text += `テンポ ${t}s [数字＋音]: 平均誤差 ${aAvg.toFixed(3)}秒 (データ数: ${aErrors.length})\n`;
+            detailedHtml += `
+                <tr>
+                    <td><strong>${t}秒</strong></td>
+                    <td>${vAvg.toFixed(3)} 秒 <span style="font-size:11px; color:#777;">(${vErrors.length}回)</span></td>
+                    <td>${aAvg.toFixed(3)} 秒 <span style="font-size:11px; color:#777;">(${aErrors.length}回)</span></td>
+                </tr>
+            `;
         });
-        
-        document.getElementById('result-data').value = text;
+        document.getElementById('detailed-analysis-tbody').innerHTML = detailedHtml;
     }
 
     // 結果テキストをクリップボードにコピーする関数（iOS/Safari 確実対応版）
