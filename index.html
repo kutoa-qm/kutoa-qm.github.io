@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>時間知覚実験システム</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background: #f5f5f5; color: #333; }
+        .screen { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        .instruction { background: #eef7ff; padding: 20px; border-radius: 6px; line-height: 1.6; margin-bottom: 20px; }
+        .btn { display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; text-align: center; margin-top: 20px; }
+        .btn:hover { background: #0056b3; }
+        .btn-stop { background: #dc3545; }
+        .btn-stop:hover { background: #bd2130; }
+        #display { font-size: 80px; font-weight: bold; text-align: center; margin: 40px 0; font-family: monospace; }
+        #cond-title { font-size: 20px; font-weight: bold; text-align: center; white-space: pre-wrap; margin-bottom: 10px; }
+        #progress-display { font-size: 16px; color: #666; text-align: center; margin-bottom: 20px; }
+        #result-data { width: 100%; height: 300px; font-family: monospace; margin-top: 15px; }
+        .practice-badge { display: inline-block; background: #dc3545; color: white; padding: 4px 8px; font-weight: bold; border-radius: 4px; margin-bottom: 10px; }
+        .center-wrapper { text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 設定・教示画面 -->
+    <div id="setup-screen" class="screen">
+        <h2>時間知覚実験</h2>
+        <div class="instruction">
+            <p>これは、リズムの提示が「時間の捉え方」に与える効果を検証する実験です。<br>
+            提示されるテンポに合わせて頭の中でカウントし、<strong>ちょうど10カウント（10拍目）</strong>になったと思う瞬間にタイマーを止めるテストを行います。</p>
+
+            <p>本番（合計12回）の前に、まずは操作に慣れるための<strong>練習（合計2回）</strong>を行います。<br>
+            以下の手順とルールをよく読んでから実験を開始してください。</p>
+
+            <strong>【実験の手順】</strong>
+            <ol>
+                <li>「実験を開始する」ボタンを押すと始まります。</li>
+                <li>各試行で「スタート」を押すとカウントが始まります。</li>
+                <li>最初の4拍分<strong>（0, 1, 2, 3）</strong>の間だけ、画面に数字が表示されます。</li>
+                <li><strong>【音あり条件】</strong>のときは、数字の表示と同時にリズム音（クリック音）が鳴ります。</li>
+                <li>「3」のカウントが終わると（4拍分が経過すると）、<strong>数字もリズム音も同時に消えて「？？？」になります。</strong></li>
+                <li>提示されたテンポを頭の中でそのまま維持し、<strong>ちょうど「10」に達したと思う瞬間</strong>に「ストップ」を押してください。</li>
+                <li>12回のテストが終了すると結果画面に移るので、指示に従って結果をフォームに入力してください。</li>
+            </ol>
+
+            <strong>【実験中のルール】</strong>
+            <ul>
+                <li><strong>数字のみ条件のとき：</strong> 画面から数字が消えた後も、頭の中でそのテンポのまま数字を数え続けてください。</li>
+                <li><strong>音あり条件のとき：</strong> 音が消えた後も、頭の中でそのリズムをキープしながら数字を数え続けてください。</li>
+                <li>※ 体を動かしてリズムを取ったり（手足で拍子を取るなど）、時計を見たりせず、純粋に頭の中の感覚だけでカウントしてください。</li>
+            </ul>
+        </div>
+        <button class="btn" onclick="initializeExperiment()">実験を開始する</button>
+    </div>
+
+    <!-- 2. 実験・練習プレイ画面 -->
+    <div id="experiment-screen" class="screen" style="display:none;">
+        <div class="center-wrapper">
+            <div id="practice-label" class="practice-badge" style="display:none;">【練習試行】</div>
+        </div>
+        <div id="progress-display">試行 1 / 12</div>
+        <div id="cond-title">条件A：数字のみ</div>
+        
+        <div id="display">0</div>
+        
+        <button id="start-btn" class="btn" onclick="triggerStart()">スタート</button>
+        <button id="stop-btn" class="btn btn-stop" onclick="triggerStop()" style="display:none;">ストップ</button>
+    </div>
+
+    <!-- 3. 練習終了時のインターバル画面 -->
+    <div id="transition-screen" class="screen" style="display:none;">
+        <h2>練習終了</h2>
+        <p>これで2回の練習試行はすべて終了です。手順やタイミングの感覚は掴めましたでしょうか？</p>
+        <p>次から<strong>本番（合計12回）</strong>が始まります。本番の測定データは実験結果として記録されます。</p>
+        <p>心の準備ができたら、以下のボタンを押して本番を開始してください。</p>
+        <button class="btn" onclick="startActualExperiment()">本番を開始する</button>
+    </div>
+
+    <!-- 4. 結果出力画面 -->
+    <div id="result-screen" class="screen" style="display:none;">
+        <h2>実験結果</h2>
+        <p>実験はすべて終了しました。以下のテキストボックス内のデータをコピーして保存してください。</p>
+        <textarea id="result-data" readonly></textarea>
+    </div>
+
+<script>
+    // 1カウントの長さの3パターン（秒単位）
+    const TEMPO_PATTERNS = [0.8, 1.2, 1.5];
+
+    // 各テンポに対応する音声ファイルをオブジェクトで管理 (.m4aに対応)
+    const audioFiles = {
+        0.8: new Audio('click_150.m4a'),
+        1.2: new Audio('click_100.m4a'),
+        1.5: new Audio('click_80.m4a')
+    };
+
+    // 音声ファイルの事前読み込み設定
+    Object.values(audioFiles).forEach(audio => {
+        audio.preload = "auto";
+        audio.load();
+    });
+
+    // モード管理変数
+    let isPracticeMode = true; // 起動時は練習モードから開始
+
+    // 実験スケジュール管理
+    let schedule = []; 
+    let currentTrialIndex = 0;
+
+    let startTime = 0;
+    let timerInterval = null;
+    let currentAudio = null; 
+
+    let resultsLog = []; // 本番の結果のみを格納するログ
+
+    // 厳密な制約を満たす本番用スケジュールを生成する関数
+    function generateValidSchedule() {
+        const TEMPOS = [0.8, 1.2, 1.5];
+        
+        function generateBlock(startCond) {
+            let attempts = 0;
+            while (attempts < 1000) {
+                let blockConds = [];
+                let nextCond = startCond;
+                for (let i = 0; i < 6; i++) {
+                    blockConds.push(nextCond);
+                    nextCond = nextCond === 'visual' ? 'audio' : 'visual';
+                }
+
+                let tempoPool = [...TEMPOS, ...TEMPOS];
+                for (let i = tempoPool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [tempoPool[i], tempoPool[j]] = [tempoPool[j], tempoPool[i]];
+                }
+
+                let isContinuous = false;
+                for (let i = 0; i < tempoPool.length - 1; i++) {
+                    if (tempoPool[i] === tempoPool[i+1]) {
+                        isContinuous = true;
+                        break;
+                    }
+                }
+                if (isContinuous) { attempts++; continue; }
+
+                let visualTempos = [];
+                let audioTempos = [];
+                for (let i = 0; i < 6; i++) {
+                    if (blockConds[i] === 'visual') visualTempos.push(tempoPool[i]);
+                    if (blockConds[i] === 'audio') audioTempos.push(tempoPool[i]);
+                }
+
+                const isVisualUnique = new Set(visualTempos).size === 3;
+                const isAudioUnique = new Set(audioTempos).size === 3;
+
+                if (isVisualUnique && isAudioUnique) {
+                    let block = [];
+                    for (let i = 0; i < 6; i++) {
+                        block.push({ condition: blockConds[i], tempo: tempoPool[i] });
+                    }
+                    return block;
+                }
+                attempts++;
+            }
+            return TEMPOS.map((t, i) => ({ condition: i % 2 === 0 ? startCond : (startCond === 'visual' ? 'audio' : 'visual'), tempo: t }));
+        }
+
+        const firstTrialCondition = Math.random() < 0.5 ? 'visual' : 'audio';
+        let firstBlock = generateBlock(firstTrialCondition);
+        const secondBlockStartCondition = firstTrialCondition;
+        let secondBlock = generateBlock(secondBlockStartCondition);
+        let finalSchedule = [...firstBlock, ...secondBlock];
+
+        let safetyCounter = 0;
+        while (finalSchedule[5].tempo === finalSchedule[6].tempo && safetyCounter < 10) {
+            secondBlock = generateBlock(secondBlockStartCondition);
+            finalSchedule = [...firstBlock, ...secondBlock];
+            safetyCounter++;
+        }
+
+        return finalSchedule;
+    }
+
+    // 練習用の簡易ランダムスケジュールを作る関数（2回分：音なし1、音あり1）
+    function generatePracticeSchedule() {
+        const firstCond = Math.random() < 0.5 ? 'visual' : 'audio';
+        const secondCond = firstCond === 'visual' ? 'audio' : 'visual';
+        const randTempo1 = TEMPO_PATTERNS[Math.floor(Math.random() * TEMPO_PATTERNS.length)];
+        let randTempo2 = TEMPO_PATTERNS[Math.floor(Math.random() * TEMPO_PATTERNS.length)];
+        
+        // 練習でも連続で同じテンポにならないように配慮
+        while(randTempo1 === randTempo2) {
+            randTempo2 = TEMPO_PATTERNS[Math.floor(Math.random() * TEMPO_PATTERNS.length)];
+        }
+
+        return [
+            { condition: firstCond, tempo: randTempo1 },
+            { condition: secondCond, tempo: randTempo2 }
+        ];
+    }
+
+    // 1. 実験全体の初期化（最初のボタンクリック）
+    function initializeExperiment() {
+        // 音声のブラウザミュート解除対策
+        Object.values(audioFiles).forEach(audio => {
+            audio.volume = 0;
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+                audio.volume = 1;
+            }).catch(e => console.log("Audio init hint"));
+        });
+
+        // まずは練習モードとしてスタート
+        isPracticeMode = true;
+        schedule = generatePracticeSchedule();
+        currentTrialIndex = 0;
+        resultsLog = [];
+        
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('experiment-screen').style.display = 'block';
+        
+        setupTrial();
+    }
+
+    // 2. 本番の開始（インターバル画面のボタンクリック）
+    function startActualExperiment() {
+        isPracticeMode = false;
+        schedule = generateValidSchedule(); // 本番用の厳密な12試行を生成
+        currentTrialIndex = 0;
+
+        document.getElementById('transition-screen').style.display = 'none';
+        document.getElementById('experiment-screen').style.display = 'block';
+
+        setupTrial();
+    }
+
+    // 3. 各試行の画面・音声準備
+    function setupTrial() {
+        const trial = schedule[currentTrialIndex];
+        
+        // 練習か本番かでラベル表示を切り替える
+        if (isPracticeMode) {
+            document.getElementById('practice-label').style.style = 'inline-block'; // 表示
+            document.getElementById('practice-label').style.display = 'inline-block'; 
+            document.getElementById('progress-display').innerText = `練習試行 ${currentTrialIndex + 1} / 2`;
+        } else {
+            document.getElementById('practice-label').style.display = 'none'; // 非表示
+            document.getElementById('progress-display').innerText = `本番試行 ${currentTrialIndex + 1} / 12`;
+        }
+        
+        document.getElementById('start-btn').style.display = 'block';
+        document.getElementById('stop-btn').style.display = 'none';
+        document.getElementById('display').innerText = "0";
+        
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+        
+        currentAudio = audioFiles[trial.tempo];
+        if (currentAudio) {
+            currentAudio.currentTime = 0;
+        }
+        
+        const condText = trial.condition === 'visual' ? "条件A：数字のみ 🕶️" : "条件B：数字 ＋ リズム音 🎧";
+        document.getElementById('cond-title').innerText = `${condText}\n(目標: 10カウント / ${(trial.tempo * 10).toFixed(1)}秒)`;
+    }
+
+    // 4. 計測スタート
+    function triggerStart() {
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('stop-btn').style.display = 'block';
+        
+        const trial = schedule[currentTrialIndex];
+        startTime = performance.now();
+
+        if (trial.condition === 'audio' && currentAudio) {
+            currentAudio.play().catch(e => console.error("Play failed:", e));
+        }
+        
+        timerInterval = setInterval(updateDisplay, 4);
+    }
+
+    // 5. タイマー稼働中の処理（音声同期型）
+    function updateDisplay() {
+        const trial = schedule[currentTrialIndex];
+        
+        if (trial.condition === 'audio' && currentAudio) {
+            const audioElapsed = currentAudio.currentTime; 
+            const currentCount = Math.floor(audioElapsed / trial.tempo);
+            
+            if (audioElapsed < (trial.tempo * 4)) {
+                document.getElementById('display').innerText = currentCount;
+            } else {
+                document.getElementById('display').innerText = "？？？";
+                currentAudio.pause();
+            }
+        } else {
+            const elapsed = (performance.now() - startTime) / 1000;
+            const currentCount = Math.floor(elapsed / trial.tempo);
+            
+            if (elapsed < (trial.tempo * 4)) {
+                document.getElementById('display').innerText = currentCount;
+            } else {
+                document.getElementById('display').innerText = "？？？";
+            }
+        }
+    }
+
+    // 6. ストップ
+    function triggerStop() {
+        clearInterval(timerInterval);
+        if (currentAudio) {
+            currentAudio.pause();
+        }
+
+        const stopTime = performance.now();
+        const finalElapsed = (stopTime - startTime) / 1000;
+        const trial = schedule[currentTrialIndex];
+        const targetTime = trial.tempo * 10;
+        const error = finalElapsed - targetTime;
+
+        // 【修正ポイント】本番モードのデータのみログに記録する
+        if (!isPracticeMode) {
+            resultsLog.push({
+                trial: currentTrialIndex + 1,
+                condition: trial.condition === 'visual' ? '数字のみ' : '数字＋音',
+                tempo: trial.tempo,
+                target: targetTime.toFixed(3),
+                actual: finalElapsed.toFixed(3),
+                error: error.toFixed(3)
+            });
+        }
+
+        currentTrialIndex++;
+        
+        // 次のステップ判定
+        if (isPracticeMode) {
+            if (currentTrialIndex < 2) {
+                setupTrial();
+            } else {
+                // 練習が2回終わったら本番への移行画面へ
+                document.getElementById('experiment-screen').style.display = 'none';
+                document.getElementById('transition-screen').style.display = 'block';
+            }
+        } else {
+            if (currentTrialIndex < 12) {
+                setupTrial();
+            } else {
+                // 本番が12回終わったら最終結果画面へ
+                showFinalResults();
+            }
+        }
+    }
+
+    // 7. 結果出力
+    function showFinalResults() {
+        document.getElementById('experiment-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        
+        let text = "【実験結果詳細データ】\n";
+        text += "試行,条件,1カウント(秒),目標秒数,測定秒数,誤差(秒)\n";
+        resultsLog.forEach(log => {
+            text += `${log.trial},${log.condition},${log.tempo},${log.target},${log.actual},${log.error}\n`;
+        });
+        
+        text += "\n-----------------------------------------\n";
+        text += "【条件別・テンポ別の平均誤差（秒）】\n";
+        
+        TEMPO_PATTERNS.forEach(t => {
+            const vErrors = resultsLog.filter(l => l.condition === '数字のみ' && l.tempo === t).map(l => parseFloat(l.error));
+            const aErrors = resultsLog.filter(l => l.condition === '数字＋音' && l.tempo === t).map(l => parseFloat(l.error));
+            
+            const vAvg = vErrors.length > 0 ? vErrors.reduce((sum, e) => sum + e, 0) / vErrors.length : 0;
+            const aAvg = aErrors.length > 0 ? aErrors.reduce((sum, e) => sum + e, 0) / aErrors.length : 0;
+            
+            text += `テンポ ${t}s [数字のみ]: 平均誤差 ${vAvg.toFixed(3)}秒 (データ数: ${vErrors.length})\n`;
+            text += `テンポ ${t}s [数字＋音]: 平均誤差 ${aAvg.toFixed(3)}秒 (データ数: ${aErrors.length})\n`;
+        });
+        
+        document.getElementById('result-data').innerText = text;
+    }
+</script>
+</body>
+</html>
